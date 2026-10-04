@@ -1,5 +1,5 @@
 
-name: 無名輪迴｜APK 編譯與網頁發布
+name: 無名輪迴｜Android 與 iOS 雙平台發布
 
 on:
   workflow_dispatch:
@@ -22,24 +22,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 取得專案
+      - name: 取得遊戲專案
         uses: actions/checkout@v4
 
-      - name: 安裝 Java 17
+      - name: 設定 Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: 安裝 Python 3.11
+      - name: 設定 Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: 安裝 Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: 安裝 Gradle
+      - name: 設定 Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
@@ -48,19 +45,25 @@ jobs:
         run: |
           mkdir -p android
           unzip -oq NamelessCycle_Android_Project.zip -d android
+          test -f android/app/build.gradle
+
+      - name: 設定 Android SDK 路徑
+        run: |
+          echo "sdk.dir=${ANDROID_HOME}" > android/local.properties
+          echo "Android SDK: ${ANDROID_HOME}"
 
       - name: 編譯 APK
         working-directory: android
         run: gradle --no-daemon assembleDebug
 
-      - name: 上傳 APK
+      - name: 上傳 APK 安裝檔
         uses: actions/upload-artifact@v4
         with:
           name: NamelessCycle-Android-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-  website:
+  ios_web:
     name: 部署 iPhone 網頁版
     runs-on: ubuntu-latest
 
@@ -68,15 +71,11 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
-    concurrency:
-      group: nameless-pages
-      cancel-in-progress: true
-
     steps:
-      - name: 取得專案
+      - name: 取得遊戲專案
         uses: actions/checkout@v4
 
-      - name: 解壓縮網頁專案
+      - name: 解壓縮 iPhone 網頁
         run: |
           mkdir -p site
           unzip -oq NamelessCycle_iOS_Website.zip -d site
@@ -85,11 +84,11 @@ jobs:
       - name: 設定 GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: 上傳網頁
+      - name: 上傳網頁檔案
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
-      - name: 正式發布網站
+      - name: 發布遊戲網址
         id: deployment
         uses: actions/deploy-pages@v4
