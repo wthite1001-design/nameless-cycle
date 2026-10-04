@@ -1,0 +1,48 @@
+
+name: 部署無名輪迴 iOS 網頁版
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'NamelessCycle_iOS_Website.zip'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: nameless-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      - name: 解壓縮網頁版
+        run: |
+          mkdir -p site
+          unzip -oq NamelessCycle_iOS_Website.zip -d site
+          test -f site/index.html
+
+      - name: 設定 GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: 上傳網站
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: 部署網站
+        id: deployment
+        uses: actions/deploy-pages@v4
